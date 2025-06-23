@@ -1,52 +1,94 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Catalog.Models;
 using Catalog.Services.Interfaces;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace Catalog.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class CategoriesController : ControllerBase
+namespace Catalog.Controllers
 {
-    private readonly ICategoryService _categoryService;
-
-    public CategoriesController(ICategoryService categoryService)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CategoriesController : ControllerBase
     {
-        _categoryService = categoryService;
-    }
+        private readonly ICategoryService _categoryService;
 
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
-    {
-        var categories = await _categoryService.GetCategoriesAsync();
+        public CategoriesController(ICategoryService categoryService)
+        {
+            _categoryService = categoryService;
+        }
 
-        return Ok(categories);
-    }
+        /// <summary>
+        /// Returns a list of all categories.
+        /// </summary>
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Category>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Get all categories",
+            Description = "Retrieves a list of all available categories."
+        )]
+        public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+        {
+            var categories = await _categoryService.GetCategoriesAsync();
 
-    [HttpPost]
-    public async Task<ActionResult<Category>> CreateCategory(Category category)
-    {
-        var created = await _categoryService.CreateCategoryAsync(category);
+            return Ok(categories);
+        }
 
-        return CreatedAtAction(nameof(GetCategories), new { id = created.Id }, created);
-    }
+        /// <summary>
+        /// Creates a new category.
+        /// </summary>
+        [HttpPost]
+        [ProducesResponseType(typeof(Category), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Create category",
+            Description = "Creates a new category and returns it."
+        )]
+        public async Task<ActionResult<Category>> CreateCategory(Category category)
+        {
+            var created = await _categoryService.CreateCategoryAsync(category);
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(int id, Category category)
-    {
-        if (id != category.Id)
-            return BadRequest();
+            return CreatedAtAction(nameof(GetCategories), new { id = created.Id }, created);
+        }
 
-        await _categoryService.UpdateCategoryAsync(category);
+        /// <summary>
+        /// Updates an existing category by ID.
+        /// </summary>
+        [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Update category",
+            Description = "Updates the details of a category by its ID."
+        )]
+        public async Task<IActionResult> UpdateCategory(int id, Category category)
+        {
+            if (id != category.Id)
+                return BadRequest();
 
-        return NoContent();
-    }
+            await _categoryService.UpdateCategoryAsync(category);
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCategory(int id)
-    {
-        await _categoryService.DeleteCategoryAsync(id);
+            return NoContent();
+        }
 
-        return NoContent();
+        /// <summary>
+        /// Deletes a category and its related items.
+        /// </summary>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [SwaggerOperation(
+            Summary = "Delete category",
+            Description = "Deletes a category by its ID, along with related items."
+        )]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            await _categoryService.DeleteCategoryAsync(id);
+
+            return NoContent();
+        }
     }
 }
